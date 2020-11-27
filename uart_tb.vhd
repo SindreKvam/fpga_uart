@@ -21,7 +21,7 @@ architecture tb of uart_tb is
 	signal tx_busy  : std_logic;
 
 	-- RX signals
-	signal rx_data           : std_logic_vector(7 downto 0);
+	signal rx_data           : std_logic_vector(7 downto 0) := (others => '0');
 	signal rx_valid          : std_logic;
 	signal rx_stop_bit_error : std_logic;
 
@@ -53,15 +53,12 @@ begin
 		clk <= not clk after clock_period / 2;
 
 		-- Reset
-		wait for 10 * clock_period;
-		rst_n <= '1';
+		rst_n <= '1' after clock_period * 10;
 
-		wait for 10 * clock_period;
-		tx_data <= X"35";
+		tx_data <= X"35" after clock_period * 20;
 		
-		wait for 10 * clock_period;
-		tx_start <= '1';
-
+		-- Start condition
+		tx_start <= '0' after clock_period * 30;
 		
 
 	end process PROC_SEQUENCER;
