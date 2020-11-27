@@ -6,7 +6,7 @@ entity uart_tx is
 	port(
 		clk   : in  std_logic;
 		rst_n : in  std_logic;
-		start : in  std_logic;
+		start : in  std_logic := '1';
 		data  : in  std_logic_vector(7 downto 0);
 		busy  : out std_logic;
 		tx    : out std_logic
@@ -35,6 +35,9 @@ architecture RTL of uart_tx is
 
 	-- For counting the number of transmitted bits
 	signal bit_counter : integer range data'range;
+	
+	-- For checking if rising edge
+	signal start_p1 : std_logic;
 
 begin
 	-- https://upload.wikimedia.org/wikipedia/commons/2/24/UART_timing_diagram.svg
@@ -64,6 +67,8 @@ begin
 			else
 				tx   <= '1';
 				busy <= '1';
+				
+				start_p1 <= start;
 
 				case state is
 
@@ -71,7 +76,7 @@ begin
 					when IDLE =>
 						busy <= '0';
 
-						if start = '1' then
+						if start = '1' and start_p1 = '0' then -- if start = '0' then
 							state        <= START_BIT;
 							data_sampled <= data;
 							busy         <= '1';

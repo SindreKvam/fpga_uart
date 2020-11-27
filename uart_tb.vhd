@@ -7,47 +7,62 @@ end entity uart_tb;
 
 architecture tb of uart_tb is
 
-	signal clk            : std_logic := '1';
-	signal rst_n          : std_logic := '1';
-	signal rx             : std_logic := '1';
-	signal data           : std_logic_vector(7 downto 0);
-	signal valid          : std_logic;
-	signal stop_bit_error : std_logic;
+	constant clock_frequency : real := 50.0e6;
+	constant clock_period    : time := 1 sec / clock_frequency;
+
+	-- Common signals
+	signal clk   : std_logic := '1';
+	signal rst_n : std_logic := '0';
+	signal tx_rx : std_logic := '1';
+
+	-- TX signals
+	signal tx_start : std_logic                    := '1';
+	signal tx_data  : std_logic_vector(7 downto 0) := (others => '0');
+	signal tx_busy  : std_logic;
+
+	-- RX signals
+	signal rx_data           : std_logic_vector(7 downto 0);
+	signal rx_valid          : std_logic;
+	signal rx_stop_bit_error : std_logic;
 
 begin
 
-	uart_rx_inst : entity work.uart_rx
+	UART_TX : entity work.uart_tx
+		port map(
+			clk   => clk,
+			rst_n => rst_n,
+			start => tx_start,
+			data  => tx_data,
+			busy  => tx_busy,
+			tx    => tx_rx
+		);
+
+	UART_RX : entity work.uart_rx
 		port map(
 			clk            => clk,
 			rst_n          => rst_n,
-			rx             => rx,
-			data           => data,
-			valid          => valid,
-			stop_bit_error => stop_bit_error
+			rx             => tx_rx,
+			data           => rx_data,
+			valid          => rx_valid,
+			stop_bit_error => rx_stop_bit_error
 		);
 
 	PROC_SEQUENCER : process is
 	begin
-		clk <= not clk;
+		
+		clk <= not clk after clock_period / 2;
 
-		-- Reset strobe
-		for i in 1 to 10 loop
-			wait until rising_edge(clk);
-		end loop;
+		-- Reset
+		wait for 10 * clock_period;
+		rst_n <= '1';
 
-		rst_n <= '0';
+		wait for 10 * clock_period;
+		tx_data <= X"35";
+		
+		wait for 10 * clock_period;
+		tx_start <= '1';
 
-		for i in 1 to 10 loop
-			wait until rising_edge(clk);
-		end loop;
-
-		-- Start condition
-		rx <= '0';
-
-		wait until rising_edge(clk);
-		rx <= '1';
-
-		wait for 120 us;
+		
 
 	end process PROC_SEQUENCER;
 
