@@ -3,3 +3,5 @@
 !.gitignore
 !*.qsf
 !*.qpf
+!/Arduino_uart
+!Arduino_uart/*.ino
